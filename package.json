@@ -1,6 +1,6 @@
 {
   "name": "weighty-words",
-  "productName": "Weighty Words",
+  "productName": "言之有物",
   "version": "1.0.0",
   "description": "言之有物 - 表达训练系统（本地桌面版）",
   "main": "main.js",
@@ -37,7 +37,7 @@
   },
   "build": {
     "appId": "com.canyuda.weighty-words",
-    "productName": "Weighty Words",
+    "productName": "言之有物",
     "files": [
       "main.js",
       "preload.js",

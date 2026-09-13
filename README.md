@@ -14,6 +14,18 @@
 - 🎵 **媒体文件练习**：导入音频或 mp4 视频（取音轨），用现成录音/录像素材按真实节奏走完整训练链路
 - ⌨️ **键盘操作**：空格开始/暂停/继续，Esc 关闭弹窗
 
+## 下载安装
+
+到 [Releases](https://github.com/canyuda/weighty-words/releases) 下载对应平台的安装包（macOS 为 dmg，Windows 为 exe 安装程序）。
+
+**macOS**：应用未经 Apple 公证，首次打开若提示「"Weighty Words.app" 已损坏，无法打开」，是 Gatekeeper 对未签名应用的拦截（经浏览器下载的文件会带隔离标记），应用本身完好。安装后在终端执行一次以下命令即可正常打开：
+
+```bash
+xattr -cr "/Applications/Weighty Words.app"
+```
+
+**Windows**：安装时若出现 SmartScreen「Windows 已保护你的电脑」，点击「更多信息 → 仍要运行」。
+
 ## 快速上手
 
 ### 1. 安装依赖
