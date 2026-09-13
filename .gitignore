@@ -4,8 +4,6 @@ models/sherpa-onnx-*/
 dist/
 .DS_Store
 .idea/
-# --dev 启动的 LLM 请求日志（lib/dev-logger.js 写入）
-logs/
 
 demo-*.html
 prompt-playground.html

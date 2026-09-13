@@ -1,13 +1,12 @@
 const { app, BrowserWindow, Menu } = require('electron');
 const path = require('path');
 const { getLexiconStore, loadLexicon } = require('./lib/lexicon');
-const { createDevLogger, isDevLaunch } = require('./lib/dev-logger');
-const { setDevLogger } = require('./lib/ai-feedback');
+const { logger } = require('./lib/logger');
 const { createSettingsStore } = require('./lib/settings-store');
 const { configureModelsDir } = require('./lib/asr/model-registry');
 const downloader = require('./lib/asr/downloader');
 const { createUsageTracker } = require('./lib/asr/usage');
-const { ensureConfigDir } = require('./lib/config-paths');
+const { ensureConfigDir, getLogsPath } = require('./lib/config-paths');
 const { wordsFromBuiltin } = require('./lib/lexicon-store');
 const { defaultSettings } = require('./lib/settings');
 
@@ -50,12 +49,16 @@ app.whenReady().then(() => {
       'words.json': wordsFromBuiltin(getLexiconStore().loadFactory())
     }
   });
-  // dev 请求日志：--dev 启动时记录 LLM 请求/响应全量（凭据脱敏）到项目 logs/llm-dev.log
-  // （打包产物无 --dev 参数，项目目录路径不会在生产路径上被触及）
-  const devLogPath = path.join(__dirname, 'logs', 'llm-dev.log');
-  const devLogEnabled = isDevLaunch(process.argv);
-  setDevLogger(createDevLogger({ enabled: devLogEnabled, logPath: devLogPath }));
-  if (devLogEnabled) console.log(`[dev] LLM 请求日志: ${devLogPath}`);
+  // 统一日志：先于一切业务接线初始化（boot 兜底错误也能落盘）。
+  // 级别唯一入口 = settings.logging.level（重启生效）；--dev 启动且仍为默认
+  // info 时自动升 DEBUG，承接原 --dev LLM 全量流量记录能力。
+  const bootSettings = settingsIpc.loadSettings();
+  const settingsLevel = bootSettings.logging && bootSettings.logging.level;
+  logger.configure({
+    logsDir: getLogsPath(),
+    level: process.argv.includes('--dev') && settingsLevel === 'info' ? 'debug' : settingsLevel
+  });
+  logger.info('app', `===== 言之有物 ${app.getVersion()} pid=${process.pid} 启动 =====`);
 
   // 设置仓库 + ASR 用量簿记 + 录音会话控制器
   const settingsStore = createSettingsStore({ load: settingsIpc.loadSettings, save: settingsIpc.saveSettings });
@@ -100,12 +103,20 @@ app.whenReady().then(() => {
     });
 
     mainWindow.loadFile(path.join(__dirname, 'src', 'index.html'));
-    // 埋点联排：渲染层 console 转发到终端（兼容新旧两种事件签名），npm start 一个终端看全两个进程
+    // 埋点联排：渲染层 console 按级别转发进统一日志（兼容新旧两种事件签名），
+    // npm start 一个终端看全两个进程。新签名 level 值域不含 debug/verbose 的
+    // 保证——未识别级别一律按 INFO 兜底；消息换行由 logger 单行化兜底（⏎）。
+    // 回调不触碰 webContents，窗口销毁后晚到事件天然安全。
     mainWindow.webContents.on('console-message', (...args) => {
       const ev = args[0];
-      const msg = ev && typeof ev === 'object' && 'message' in ev ? ev.message : args[2];
-      if (typeof msg === 'string' && msg) console.log('[renderer]', msg);
+      const isNew = ev && typeof ev === 'object' && 'message' in ev;
+      const msg = isNew ? ev.message : args[2];
+      if (typeof msg !== 'string' || !msg) return;
+      const level = isNew ? ev.level : args[1];
+      const mapped = level === 'error' ? 'error' : (level === 'warning' || level === 'warn') ? 'warn' : 'info';
+      logger[mapped]('renderer', msg);
     });
+    logger.info('window', '主窗口已创建');
     mainWindow.setFullScreenable(true);
 
     // 录音可用性初始推送 + 首启引导：等渲染层监听器就绪（DOMContentLoaded 先于 did-finish-load）
@@ -121,6 +132,7 @@ app.whenReady().then(() => {
     mainWindow.on('close', (e) => windowIpc.handleClose(e, mainWindow));
 
     mainWindow.on('closed', () => {
+      logger.info('window', '主窗口已关闭');
       mainWindow = null;
     });
   }
@@ -182,6 +194,8 @@ app.whenReady().then(() => {
     asrBroadcast.broadcastASRAvailability();
   });
 
+  logger.info('app', '启动完成', { version: app.getVersion(), level: logger.getLevel() });
+
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       createMainWindow();
@@ -189,7 +203,7 @@ app.whenReady().then(() => {
   });
 }).catch((err) => {
   // 启动链兜底：任何未预期异常都要可见地失败，不静默挂死
-  console.error('[boot] 启动失败:', err);
+  logger.error('app', '启动失败', { error: err });
   try {
     require('electron').dialog.showErrorBox('言之有物 启动失败', String(err && err.message ? err.message : err));
   } catch (_) { /* dialog unavailable */ }
@@ -200,4 +214,8 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();
   }
+});
+
+app.on('will-quit', () => {
+  logger.info('app', '应用退出');
 });

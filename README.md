@@ -171,7 +171,7 @@ tar xvf sherpa-onnx-streaming-paraformer-bilingual-zh-en.tar.bz2
 │   ├── settings-store.js # 设置串行化读写
 │   ├── config-paths.js  # ~/.weighty-words 目录解析 / 首启创建 / 原子写
 │   ├── secret-box.js    # API Key 掩码与合并协议
-│   └── dev-logger.js    # --dev 模式 LLM 请求日志
+│   └── logger.js        # 统一分级文件日志（~/.weighty-words/logs/，脱敏/轮转/清理）
 ├── data/
 │   └── emotion-lexicon.json
 ├── docs/                # 词库本体资料
