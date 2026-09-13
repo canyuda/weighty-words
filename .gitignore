@@ -1,0 +1,31 @@
+node_modules/
+models/*.onnx
+models/sherpa-onnx-*/
+dist/
+.DS_Store
+.idea/
+# --dev 启动的 LLM 请求日志（lib/dev-logger.js 写入）
+logs/
+
+demo-*.html
+prompt-playground.html
+listenhub-*.png
+__pycache__/
+**.pyc
+# Secrets - never commit
+.env
+
+# Local AI assistant config
+.claude/
+CLAUDE.md
+
+models/*.tar.bz2
+.pptx-venv/
+
+# Mimosa security scan history
+.mimosa/
+
+# Local agent session artifacts
+.zcode/
+ppts/
+openspec/*

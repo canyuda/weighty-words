@@ -1,0 +1,88 @@
+{
+  "name": "weighty-words",
+  "productName": "Weighty Words",
+  "version": "1.0.0",
+  "description": "言之有物 - 表达训练系统（本地桌面版）",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "test": "npm run test:unit && npm run test:e2e",
+    "test:unit": "vitest run",
+    "test:e2e": "node tests/e2e/smoke.js",
+    "build": "electron-builder --mac --publish never",
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
+    "postinstall": "node scripts/fix-dev-icon.js",
+    "prebuild:win": "npm i --no-save --force sherpa-onnx-win-x64",
+    "build:win": "electron-builder --win --x64 --publish never"
+  },
+  "keywords": [
+    "expression",
+    "training",
+    "speech",
+    "asr",
+    "chinese"
+  ],
+  "author": "canyuda",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^43.0.0",
+    "electron-builder": "^25.1.8",
+    "playwright": "^1.63.0",
+    "vitest": "^5.0.0"
+  },
+  "dependencies": {
+    "sherpa-onnx-node": "^1.10.0",
+    "ws": "^8.21.3"
+  },
+  "build": {
+    "appId": "com.canyuda.weighty-words",
+    "productName": "Weighty Words",
+    "files": [
+      "main.js",
+      "preload.js",
+      "src/**/*",
+      "lib/**/*",
+      "data/**/*"
+    ],
+    "asarUnpack": [
+      "node_modules/sherpa-onnx-*/**"
+    ],
+    "npmRebuild": false,
+    "directories": {
+      "output": "dist"
+    },
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "category": "public.app-category.education",
+      "icon": "src/assets/icon.png",
+      "identity": null,
+      "artifactName": "${name}-${version}-${arch}.${ext}",
+      "files": [
+        "main.js",
+        "preload.js",
+        "src/**/*",
+        "lib/**/*",
+        "data/**/*",
+        "!node_modules/sherpa-onnx-win-x64/**"
+      ]
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "artifactName": "${name}-${version}-setup.${ext}",
+      "files": [
+        "main.js",
+        "preload.js",
+        "src/**/*",
+        "lib/**/*",
+        "data/**/*",
+        "!node_modules/sherpa-onnx-darwin-arm64/**"
+      ]
+    }
+  }
+}

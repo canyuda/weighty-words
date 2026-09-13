@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>言之有物</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- ==================== 页面：工作台（默认） ==================== -->
+  <div id="page-workspace" class="app-page active">
+    <!-- 顶栏：品牌 + 计时 + 入口（计时器在视线水平位置，录制中可直接瞥见） -->
+    <header class="topbar">
+      <div class="topbar-brand">
+        <img src="assets/icon.png" class="brand-mark" alt="">
+        <span class="app-title">言之有物</span>
+      </div>
+      <div class="topbar-right">
+        <span id="media-file-chip" class="media-chip hidden">
+          <span id="media-file-name" class="media-file-name"></span>
+          <button id="btn-clear-media" class="media-clear" title="移除文件，回到麦克风模式">×</button>
+        </span>
+        <span id="media-progress" class="media-progress hidden"></span>
+        <span id="timer" class="timer">00:00</span>
+        <button id="btn-lexicon-editor" class="btn-icon btn-labeled" title="词库编辑器" aria-label="词库编辑器">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          <span class="btn-icon-label">词库</span>
+        </button>
+        <button id="btn-prompt-editor" class="btn-icon btn-labeled" title="训练规则定制" aria-label="训练规则定制">
+          <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg>
+          <span class="btn-icon-label">规则定制</span>
+        </button>
+        <button id="btn-settings" class="btn-icon btn-labeled" title="设置" aria-label="设置">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+          <span class="btn-icon-label">设置</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- 双区工作台：左 = 字幕舞台 + dock，右 = 洞察侧栏（统计 + 实时反馈） -->
+    <div class="workspace">
+      <div class="stage-col">
+        <!-- 字幕舞台：无框大字，画布即主角 -->
+        <main class="stage">
+          <div id="subtitle-scroll" class="subtitle-scroll">
+            <div id="subtitle-container" class="subtitle-container">
+              <div class="subtitle-line hint">
+                <div class="empty-state">
+                  <span class="empty-badge">
+                    <svg class="icon" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+                  </span>
+                  <p class="empty-title">按 <kbd>空格</kbd> 或点击下方按钮，开口即被听见</p>
+                  <p class="empty-sub">也可以粘贴逐字稿，离线分析表达（Esc 关闭弹窗）</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </main>
+
+        <!-- 底部 dock：左入口 / 中主控 / 右内容操作 -->
+        <footer class="dock">
+          <div class="dock-left">
+            <button id="btn-paste" class="btn-sm">
+              <svg class="icon-sm" viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>
+              粘贴逐字稿
+            </button>
+            <button id="btn-import-media" class="btn-sm" title="导入音频或 mp4 视频，用其中的声音进行训练（播放会外放素材声音）">
+              <svg class="icon-sm" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+              导入媒体
+            </button>
+            <input type="file" id="media-file-input" class="hidden" accept=".wav,.mp3,.m4a,.ogg,.flac,.mp4,audio/*,video/mp4">
+          </div>
+          <div class="dock-center">
+            <button id="btn-start" class="btn-main btn-start" title="开始录制（空格）">
+              <svg class="icon icon-mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+              <svg class="icon icon-play hidden" viewBox="0 0 24 24"><path d="M7 5l12 7-12 7V5z"/></svg>
+              <span class="btn-label">开始录制</span>
+            </button>
+            <button id="btn-pause" class="btn-main btn-pause hidden" title="暂停（空格）">
+              <svg class="icon" viewBox="0 0 24 24"><line x1="9" y1="5" x2="9" y2="19"/><line x1="15" y1="5" x2="15" y2="19"/></svg>
+              <span class="btn-label">暂停</span>
+            </button>
+            <button id="btn-resume" class="btn-main btn-resume hidden" title="继续（空格）">
+              <svg class="icon" viewBox="0 0 24 24"><path d="M7 5l12 7-12 7V5z"/></svg>
+              <span class="btn-label">继续</span>
+            </button>
+            <button id="btn-stop" class="btn-main btn-stop hidden" title="结束录制">
+              <svg class="icon" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+              <span class="btn-label">结束</span>
+            </button>
+            <button id="btn-report" class="btn-main btn-report hidden" title="生成表达分析报告">
+              <svg class="icon" viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>
+              <span class="btn-label">生成报告</span>
+            </button>
+          </div>
+          <div class="dock-right">
+            <button id="btn-copy-text" class="btn-sm hidden" title="复制原文">
+              <svg class="icon-sm" viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>
+              <span class="btn-label">复制</span>
+            </button>
+            <button id="btn-save-text" class="btn-sm hidden" title="保存原文">
+              <svg class="icon-sm" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>
+              <span class="btn-label">保存</span>
+            </button>
+            <button id="btn-clear" class="btn-sm hidden" title="清空">
+              <svg class="icon-sm" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+              清空
+            </button>
+          </div>
+        </footer>
+      </div>
+
+      <!-- 洞察侧栏：统计度量块 + 实时反馈流（固定专属区域，不遮挡字幕） -->
+      <aside class="rail">
+        <div class="rail-stats">
+          <div class="metric metric-vague">
+            <span class="metric-value" id="stat-vague">0</span>
+            <span class="metric-label">笼统词</span>
+          </div>
+          <div class="metric metric-filler">
+            <span class="metric-value" id="stat-fillers">0</span>
+            <span class="metric-label">填充词</span>
+          </div>
+          <div class="metric metric-hedge">
+            <span class="metric-value" id="stat-hedges">0</span>
+            <span class="metric-label">犹豫词</span>
+          </div>
+          <div class="metric metric-density">
+            <span class="metric-value" id="stat-density">--</span>
+            <span class="metric-label">表达密度</span>
+          </div>
+        </div>
+        <div class="rail-feed-head">
+          <svg class="icon-sm" viewBox="0 0 24 24"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-4 10.5c.6.5 1 1.5 1 2.5h6c0-1 .4-2 1-2.5A6 6 0 0 0 12 3z"/></svg>
+          实时反馈
+          <span id="asr-engine-badge" class="asr-engine-badge hidden"></span>
+        </div>
+        <div class="rail-feed">
+          <div id="feedback-content" class="feedback-content">
+            <!-- 实时反馈内容 -->
+          </div>
+          <div class="feedback-empty">条目将在这里实时出现</div>
+        </div>
+      </aside>
+    </div>
+
+    <!-- 粘贴逐字稿弹窗 -->
+    <div id="paste-modal" class="modal hidden">
+      <div class="modal-content modal-content-md">
+        <div class="modal-header">
+          <h2>粘贴逐字稿</h2>
+          <button id="btn-close-paste" class="btn-close" aria-label="关闭">×</button>
+        </div>
+        <div class="modal-body paste-body">
+          <p class="paste-desc">把逐字稿粘贴进来，我帮你分析</p>
+          <textarea id="paste-textarea" class="paste-textarea" placeholder="在这里粘贴文字..."></textarea>
+          <button id="btn-analyze-paste" class="btn-analyze">
+            <svg class="icon-sm" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            开始分析
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 录音引导弹窗（引擎不可用时） -->
+    <div id="guide-modal" class="modal hidden">
+      <div class="modal-content modal-content-sm">
+        <div class="modal-header">
+          <h2>暂时无法开始录制</h2>
+          <button id="btn-close-guide" class="btn-close" aria-label="关闭">×</button>
+        </div>
+        <div class="modal-body">
+          <p class="guide-reason" id="guide-reason"></p>
+          <div class="guide-actions">
+            <button id="btn-guide-cloud" class="btn-sm hidden">
+              <svg class="icon-sm" viewBox="0 0 24 24"><path d="M17.5 19a4.5 4.5 0 1 0-.42-8.98 6 6 0 1 0-11.06 3.1A4 4 0 0 0 7 19z"/></svg>
+              去配置云端识别
+            </button>
+            <button id="btn-guide-download" class="btn-sm hidden">
+              <svg class="icon-sm" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 19h16"/></svg>
+              下载本地模型
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 报告弹窗 -->
+    <div id="report-modal" class="modal hidden">
+      <div class="modal-content modal-content-lg">
+        <div class="modal-header">
+          <h2>表达分析报告</h2>
+          <div class="modal-header-actions">
+            <button id="btn-regenerate-report" class="btn-sm" title="忽略缓存，重新调用模型生成">
+              <svg class="icon-sm" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.64-6.36M21 3v6h-6"/></svg>
+              <span class="btn-label">重新生成</span>
+            </button>
+            <button id="btn-copy-report" class="btn-sm">
+              <svg class="icon-sm" viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>
+              <span class="btn-label">复制全文</span>
+            </button>
+            <button id="btn-close-report" class="btn-close" aria-label="关闭">×</button>
+          </div>
+        </div>
+        <div id="report-body" class="modal-body">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 页面：设置 ==================== -->
+  <div id="page-settings" class="app-page">
+    <button id="btn-settings-back" class="window-close" aria-label="返回工作台">
+      <svg class="icon" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+      <span class="btn-icon-label">返回</span>
+    </button>
+    <div class="settings-container">
+      <h1 class="page-heading">
+        <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/></svg>
+        设置
+      </h1>
+
+      <div class="settings-layout">
+        <!-- 左侧分类导航 -->
+        <nav class="settings-nav">
+          <button type="button" class="nav-item active" data-panel="llm">分析模型</button>
+          <button type="button" class="nav-item" data-panel="asr">语音识别</button>
+        </nav>
+
+        <!-- 右侧配置面板 -->
+        <div class="settings-panels">
+          <div id="panel-llm" class="settings-panel active">
+            <div class="analyzer-general">
+              <div class="form-group">
+                <label>生成参数</label>
+                <div class="model-dir-row">
+                  <input type="number" id="llm-temperature" min="0" max="2" step="0.1" title="温度（0-2）" placeholder="温度 0.7">
+                  <input type="number" id="llm-realtime-tokens" min="32" max="512" step="1" title="实时反馈 max tokens（32-512）" placeholder="实时 150">
+                  <input type="number" id="llm-report-tokens" min="1024" max="32768" step="1" title="报告 max tokens（1024-32768）" placeholder="报告 8192">
+                </div>
+                <div class="hint">温度 0–2 · 实时反馈 32–512 · 报告 1024–32768，留空使用默认值</div>
+              </div>
+
+              <div class="form-group">
+                <label>实时反馈触发字数</label>
+                <input type="number" id="feedback-trigger" min="30" max="200" step="10" placeholder="30">
+                <div class="hint">每积累该字数触发一次实时反馈，30 为下限，范围 30–200，默认 30</div>
+              </div>
+            </div>
+
+            <div class="analyzer-section">
+              <div class="analyzer-section-head">
+                <label>提供商列表</label>
+                <div class="analyzer-section-actions">
+                  <button type="button" class="btn-sm" id="btn-analyzer-add">新增</button>
+                </div>
+              </div>
+              <div id="analyzer-list" class="analyzer-list"></div>
+              <div class="hint" id="analyzer-list-hint">左侧单选切换使用的分析模型，行内下拉切换当前模型，即时生效</div>
+              <div class="message-container">
+                <div class="save-success" id="save-success">✓ 已保存</div>
+                <div class="connection-error" id="connection-error"></div>
+              </div>
+              <button class="btn-save" id="btn-save-analysis">保存通用设置</button>
+            </div>
+
+            <!-- 新增/编辑条目弹窗 -->
+            <div class="analyzer-mask hidden" id="analyzer-dialog-mask">
+              <div class="analyzer-dialog">
+                <div class="analyzer-dialog-head">
+                  <h2 id="analyzer-dialog-title">新增分析模型</h2>
+                  <button type="button" class="btn-sm" id="btn-analyzer-dialog-close">✕</button>
+                </div>
+                <div class="analyzer-dialog-body">
+                  <div class="form-group">
+                    <label>提供商预设</label>
+                    <select id="analyzer-preset"></select>
+                    <div class="hint">自定义接入支持任意公网地址与三种协议</div>
+                  </div>
+                  <div class="form-group">
+                    <label>显示名</label>
+                    <input type="text" id="analyzer-name" placeholder="列表中显示的名称">
+                  </div>
+                  <div class="form-group">
+                    <label>BASE URL</label>
+                    <input type="text" id="analyzer-base-url" placeholder="https://api.example.com/v1" autocomplete="off">
+                    <div class="hint">选择预设后自动填充，可修改</div>
+                  </div>
+                  <div class="form-group">
+                    <label>API Key</label>
+                    <input type="text" id="analyzer-apikey" placeholder="输入你的 API Key" autocomplete="off">
+                    <div class="hint">已保存的 Key 以掩码显示，眼睛图标可查看明文，输入新值即可替换</div>
+                  </div>
+                  <div class="form-group">
+                    <label>接入协议</label>
+                    <select id="analyzer-protocol">
+                      <option value="openai-chat">OpenAI Chat Completion（/chat/completions）</option>
+                      <option value="openai-responses">OpenAI Responses（/responses）</option>
+                      <option value="anthropic-messages">Anthropic Messages（/v1/messages）</option>
+                    </select>
+                    <div class="hint" id="analyzer-protocol-hint">内置预设按官方接口自动锁定</div>
+                  </div>
+                  <div class="form-group">
+                    <label>模型（可多选）</label>
+                    <div class="model-dir-row">
+                      <input type="text" id="analyzer-model-input" placeholder="输入模型名" autocomplete="off">
+                      <button type="button" class="btn-sm hidden" id="btn-analyzer-refresh" title="从官网接口拉取模型列表">⟳ 刷新</button>
+                      <button type="button" class="btn-sm" id="btn-analyzer-model-add">添加</button>
+                    </div>
+                    <div id="analyzer-model-chips" class="analyzer-model-chips"></div>
+                    <div id="analyzer-model-candidates" class="analyzer-candidates hidden"></div>
+                    <div class="hint">可从官网列表勾选或手动输入；第一个添加的模型为默认主模型</div>
+                  </div>
+                  <div class="form-group">
+                    <label>当前使用模型（主模型）</label>
+                    <select id="analyzer-primary"></select>
+                    <div class="hint">实时反馈与报告使用此模型；保存后也可在列表行内随时切换</div>
+                  </div>
+                </div>
+                <div class="analyzer-dialog-foot">
+                  <div class="connection-error" id="analyzer-dialog-error"></div>
+                  <button class="btn-sm" id="btn-analyzer-cancel">取消</button>
+                  <button class="btn-save" id="btn-analyzer-save">保存</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 逐模型测试弹窗 -->
+            <div class="analyzer-mask hidden" id="analyzer-test-mask">
+              <div class="analyzer-dialog">
+                <div class="analyzer-dialog-head">
+                  <h2 id="analyzer-test-title">测试分析模型</h2>
+                  <button type="button" class="btn-sm" id="btn-analyzer-test-close">✕</button>
+                </div>
+                <div class="analyzer-dialog-body">
+                  <div id="analyzer-test-rows"></div>
+                  <div class="hint" id="analyzer-test-empty" style="display:none;">当前没有已配置的分析模型</div>
+                </div>
+                <div class="analyzer-dialog-foot">
+                  <button class="btn-sm" id="btn-analyzer-test-done">关闭</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div id="panel-asr" class="settings-panel">
+            <!-- 面板内二级子菜单：通用 / 各供应商 / 本地模型 -->
+            <div class="asr-layout">
+              <nav class="settings-nav asr-nav" aria-label="语音识别子菜单">
+                <button type="button" class="nav-item active" data-asr-panel="general">通用</button>
+                <button type="button" class="nav-item" data-asr-panel="dashscope">阿里云百炼</button>
+                <button type="button" class="nav-item" data-asr-panel="tencent">腾讯云</button>
+                <button type="button" class="nav-item" data-asr-panel="volcengine">火山引擎</button>
+                <button type="button" class="nav-item" data-asr-panel="xfyun">讯飞</button>
+                <button type="button" class="nav-item" data-asr-panel="local">本地模型</button>
+              </nav>
+
+              <div class="asr-subpanels">
+                <!-- 通用：引擎模式 + 用量 -->
+                <div id="asr-panel-general" class="asr-subpanel active">
+                  <div class="form-group">
+                    <label>识别引擎</label>
+                    <select id="asr-engine">
+                      <option value="auto">自动（启用的云端中按优先级选择，无可用云端则用本地）</option>
+                      <option value="dashscope">仅云端 · 阿里云百炼</option>
+                      <option value="tencent">仅云端 · 腾讯云</option>
+                      <option value="volcengine">仅云端 · 火山引擎</option>
+                      <option value="xfyun">仅云端 · 讯飞</option>
+                      <option value="local">仅本地（离线，需下载模型）</option>
+                    </select>
+                    <div class="hint">引擎启动或识别失败时不自动切换，会提示原因并引导手动更换；各供应商可在子页中启用/禁用</div>
+                  </div>
+
+                  <div class="form-group">
+                    <label>用量与历史（估算）</label>
+                    <div id="usage-engines" class="hint" style="white-space:pre-wrap;"></div>
+                    <div id="usage-recent" class="model-presets" style="white-space:pre-wrap;"></div>
+                    <button type="button" class="btn-sm btn-danger" id="btn-usage-reset" style="margin-top:6px;">清零用量</button>
+                  </div>
+                </div>
+
+                <!-- 阿里云百炼 -->
+                <div id="asr-panel-dashscope" class="asr-subpanel">
+                  <div class="provider-head">
+                    <h3 class="provider-title">阿里云百炼</h3>
+                    <label class="switch-row"><input type="checkbox" id="asr-dashscope-enabled" class="switch"><span>启用</span></label>
+                  </div>
+                  <div class="form-group">
+                    <label>百炼 API Key</label>
+                    <input type="text" id="asr-apikey" placeholder="sk-xxx" autocomplete="off">
+                    <div class="hint">在 bailian.console.aliyun.com 获取，按实际语音时长计费；已保存的 Key 以掩码显示，眼睛图标可查看明文</div>
+                  </div>
+
+                  <div class="form-group">
+                    <label>百炼语音识别模型</label>
+                    <div class="combobox">
+                      <input type="text" id="asr-model" placeholder="paraformer-realtime-v2" autocomplete="off">
+                      <button type="button" class="combobox-toggle" id="asr-model-toggle" aria-label="展开模型预设" title="查看全部预设模型">
+                        <svg class="icon-sm" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+                      </button>
+                      <div class="combobox-menu hidden" id="asr-model-menu" role="listbox" aria-label="预设模型列表"></div>
+                    </div>
+                    <div class="model-presets">可从下拉选择或输入其他百炼实时模型 ID</div>
+                  </div>
+                </div>
+
+                <!-- 腾讯云 -->
+                <div id="asr-panel-tencent" class="asr-subpanel">
+                  <div class="provider-head">
+                    <h3 class="provider-title">腾讯云</h3>
+                    <label class="switch-row"><input type="checkbox" id="asr-tencent-enabled" class="switch"><span>启用</span></label>
+                  </div>
+                  <div class="form-group">
+                    <label>腾讯云 AppID / SecretId / SecretKey</label>
+                    <input type="text" id="asr-tencent-appid" placeholder="AppID">
+                    <input type="text" id="asr-tencent-secretid" placeholder="SecretId" autocomplete="off" style="margin-top:6px;">
+                    <input type="text" id="asr-tencent-secretkey" placeholder="SecretKey" autocomplete="off" style="margin-top:6px;">
+                    <div class="hint">在 console.cloud.tencent.com/asr 获取；语气词过滤已强制关闭</div>
+                  </div>
+                  <div class="form-group">
+                    <label>腾讯云识别模型</label>
+                    <input type="text" id="asr-tencent-model" placeholder="16k_zh">
+                  </div>
+                </div>
+
+                <!-- 火山引擎 -->
+                <div id="asr-panel-volcengine" class="asr-subpanel">
+                  <div class="provider-head">
+                    <h3 class="provider-title">火山引擎</h3>
+                    <label class="switch-row"><input type="checkbox" id="asr-volcengine-enabled" class="switch"><span>启用</span></label>
+                  </div>
+                  <div class="form-group">
+                    <label>火山引擎 App Key / Access Key</label>
+                    <input type="text" id="asr-volc-appkey" placeholder="APP ID" autocomplete="off">
+                    <input type="text" id="asr-volc-accesskey" placeholder="Access Token" autocomplete="off" style="margin-top:6px;">
+                    <div class="hint">在 console.volcengine.com/speech/app 获取；已保存的 Access Key 以掩码显示，眼睛图标可查看明文</div>
+                  </div>
+                  <div class="form-group">
+                    <label>火山引擎模型</label>
+                    <input type="text" id="asr-volc-model" placeholder="bigmodel">
+                  </div>
+                </div>
+
+                <!-- 讯飞 -->
+                <div id="asr-panel-xfyun" class="asr-subpanel">
+                  <div class="provider-head">
+                    <h3 class="provider-title">讯飞</h3>
+                    <label class="switch-row"><input type="checkbox" id="asr-xfyun-enabled" class="switch"><span>启用</span></label>
+                  </div>
+                  <div class="form-group">
+                    <label>讯飞 AppID / API Key</label>
+                    <input type="text" id="asr-xfyun-appid" placeholder="AppID" autocomplete="off">
+                    <input type="text" id="asr-xfyun-apikey" placeholder="API Key" autocomplete="off" style="margin-top:6px;">
+                    <div class="hint">在 xfyun.cn 实时语音转写控制台获取</div>
+                  </div>
+                </div>
+
+                <!-- 本地模型 -->
+                <div id="asr-panel-local" class="asr-subpanel">
+                  <div class="provider-head">
+                    <h3 class="provider-title">本地模型（离线识别）</h3>
+                    <label class="switch-row"><input type="checkbox" id="asr-local-enabled" class="switch"><span>启用</span></label>
+                  </div>
+                  <div class="form-group">
+                    <div class="model-download-card" id="model-download-card">
+                      <div class="model-download-head">
+                        <span id="model-status-text" class="model-status">检查中…</span>
+                        <span class="hint">int8 精度 · 约 237MB · 支持断点续传</span>
+                      </div>
+                      <div class="progress-track hidden" id="model-progress-track">
+                        <div class="progress-fill" id="model-progress-fill"></div>
+                      </div>
+                      <div class="model-download-error hidden" id="model-download-error"></div>
+                      <div class="model-dir-row">
+                        <input type="text" id="model-dir" readonly placeholder="默认目录" title="模型存放目录">
+                        <button type="button" class="btn-sm" id="btn-model-dir-change">更改</button>
+                        <button type="button" class="btn-sm" id="btn-model-dir-reset">默认</button>
+                      </div>
+                      <div class="model-download-actions">
+                        <select id="model-source" aria-label="下载源">
+                          <option value="huggingface">官方源</option>
+                          <option value="mirror">国内镜像</option>
+                        </select>
+                        <button type="button" class="btn-sm" id="btn-model-download">下载模型</button>
+                        <button type="button" class="btn-sm hidden" id="btn-model-cancel">取消</button>
+                        <button type="button" class="btn-sm btn-danger hidden" id="btn-model-delete">删除模型</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="message-container">
+              <div class="save-success" id="asr-save-success">✓ 已保存</div>
+              <div class="connection-error" id="asr-connection-error"></div>
+            </div>
+            <button class="btn-save" id="btn-save-asr">保存语音识别设置</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 页面：词库编辑器 ==================== -->
+  <div id="page-lexicon" class="app-page">
+    <button id="btn-lexicon-back" class="window-close" aria-label="返回工作台">
+      <svg class="icon" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+      <span class="btn-icon-label">返回</span>
+    </button>
+    <div class="lex-editor">
+      <h1 class="page-heading">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        词库编辑器
+      </h1>
+
+      <div class="lex-layout">
+        <!-- 左侧分类锚点导航：点击定位分区，滚动高亮当前分区 -->
+        <nav class="lex-nav settings-nav" aria-label="词库分区导航">
+          <button type="button" class="nav-item active" data-lex-target="lex-section-fillers">填充词</button>
+          <button type="button" class="nav-item" data-lex-target="lex-section-hedges">犹豫词</button>
+          <button type="button" class="nav-item" data-lex-target="lex-section-vague">笼统词</button>
+          <button type="button" class="nav-item" data-lex-target="lex-section-emotions">情绪词</button>
+        </nav>
+
+        <div class="lex-content">
+          <p class="lex-legend">删除内置词条后可重新添加恢复；保存后即时生效于词库分析与字幕高亮。</p>
+
+          <div class="lex-section" id="lex-section-fillers">
+            <div class="lex-section-head">
+              <h2>填充词</h2>
+              <span class="lex-warn" id="warn-fillers"></span>
+              <span class="lex-count" id="count-fillers">0</span>
+            </div>
+            <p class="lex-desc">「嗯、那个」等口头语（橙色批注）</p>
+            <div class="chip-row" id="chips-fillers"></div>
+            <div class="lex-add-row">
+              <input type="text" id="add-filler" placeholder="新增填充词，回车添加">
+            </div>
+          </div>
+
+          <div class="lex-section" id="lex-section-hedges">
+            <div class="lex-section-head">
+              <h2>犹豫词</h2>
+              <span class="lex-warn" id="warn-hedges"></span>
+              <span class="lex-count" id="count-hedges">0</span>
+            </div>
+            <p class="lex-desc">「可能、我觉得」等弱化表达（橙色批注）</p>
+            <div class="chip-row" id="chips-hedges"></div>
+            <div class="lex-add-row">
+              <input type="text" id="add-hedge" placeholder="新增犹豫词，回车添加">
+            </div>
+          </div>
+
+          <div class="lex-section" id="lex-section-vague">
+            <div class="lex-section-head">
+              <h2>笼统词 → 替代词</h2>
+              <span class="lex-warn" id="warn-vague"></span>
+              <span class="lex-count" id="count-vague">0</span>
+            </div>
+            <p class="lex-desc">点击替代词列表内联修改（逗号分隔），Esc 取消</p>
+            <div class="lex-vague-list" id="vague-list"></div>
+            <div class="lex-add-row">
+              <input type="text" id="add-vague-word" placeholder="笼统词" style="flex:0 0 130px;">
+              <input type="text" id="add-vague-alts" placeholder="替代词，逗号分隔">
+            </div>
+          </div>
+
+          <div class="lex-section" id="lex-section-emotions">
+            <div class="lex-section-head">
+              <h2>情绪词</h2>
+              <span class="lex-warn" id="warn-emotions"></span>
+              <span class="lex-count" id="count-emotions">0</span>
+            </div>
+            <p class="lex-desc">来自情绪词库的细腻表达（黄色批注）</p>
+            <div class="chip-row" id="chips-emotions"></div>
+            <div class="lex-add-row">
+              <input type="text" id="add-emotion" placeholder="新增情绪词，回车添加">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右下角悬浮操作栏：不随页面滚动 -->
+    <div class="floating-actions">
+      <button type="button" class="btn-sm" id="btn-undo-lexicon" disabled title="撤销一步未保存的修改">撤销</button>
+      <button type="button" class="btn-save" id="btn-save-lexicon">保存</button>
+      <button type="button" class="btn-sm" id="btn-import-lexicon">导入</button>
+      <button type="button" class="btn-sm" id="btn-export-lexicon">导出</button>
+      <button type="button" class="btn-sm btn-danger" id="btn-reset-lexicon">恢复出厂</button>
+      <span class="lex-hintbar" id="hintbar"></span>
+    </div>
+  </div>
+
+  <!-- ==================== 页面：规则定制 ==================== -->
+  <div id="page-prompts" class="app-page">
+    <button id="btn-prompts-back" class="window-close" aria-label="返回工作台">
+      <svg class="icon" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+      <span class="btn-icon-label">返回</span>
+    </button>
+    <div class="editor-container">
+      <h1 class="page-heading">
+        <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg>
+        训练规则定制
+      </h1>
+      <p class="editor-subtitle">底层词库和基础反馈规则始终生效。你可以在上面叠加个人化的训练目标和规则。</p>
+
+      <!-- 底层：锁定预览 -->
+      <div class="section">
+        <div class="section-header">
+          <span class="section-title">底层系统规则</span>
+          <span class="section-badge badge-locked">锁定</span>
+        </div>
+        <p class="section-desc">底层规则不可编辑，训练时始终生效。</p>
+        <div class="locked-preview">
+14条实时反馈规则（重复检测 / 结论缺失 / 自问自答 / 听众视角 / 前后矛盾 / 时间感知 / 金句捕捉 / 类比检测 / 抽象→具象 / 主题漂移 / 立场模糊）
++ 词库高亮（笼统词 / 填充词 / 犹豫词）
++ 完整报告模板（总评 / 亮点 / 逐句编辑 / 用词替换表 / 行为模式 / 数据）
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <!-- 用户自定义：训练目标 -->
+      <div class="section">
+        <div class="section-header">
+          <span class="section-title">我的训练目标</span>
+          <span class="section-badge badge-editable">可编辑</span>
+        </div>
+        <p class="section-desc">你现阶段最想改善的表达问题是什么？AI会据此调整反馈优先级。</p>
+        <textarea id="goals" placeholder="比如：&#10;- 我想减少说「然后」的频率&#10;- 我想练习每段话都有一个明确结论&#10;- 我想让表达更有画面感，多用具体细节&#10;- 我想练习用数字代替「很多/很少」"></textarea>
+        <span class="example-toggle" onclick="toggleExample('goals-example')">看示例</span>
+        <div id="goals-example" class="example-content">
+我现在最大的问题是：<br>
+1. 说话太散，经常跑题，一段话说完别人不知道我想表达什么<br>
+2. 口癖「然后」「就是」太多，听起来不专业<br>
+3. 描述事情总是用笼统的词，比如「很好」「挺不错的」，缺少具体画面
+        </div>
+      </div>
+
+      <!-- 用户自定义：自定义规则 -->
+      <div class="section">
+        <div class="section-header">
+          <span class="section-title">自定义触发规则</span>
+          <span class="section-badge badge-editable">可编辑</span>
+        </div>
+        <p class="section-desc">格式：触发条件 → 输出什么提示（跟底层14条规则一起生效）</p>
+        <textarea id="custom-rules" placeholder="比如：&#10;- 连续3句以「我」开头 → 「换个主语」&#10;- 出现「其实吧」「说实话」→ 「直接说」&#10;- 超过30秒没举例子 → 「来个例子」"></textarea>
+        <span class="example-toggle" onclick="toggleExample('rules-example')">看示例</span>
+        <div id="rules-example" class="example-content">
+- 连续说了两个「非常」→ 「换个程度词」<br>
+- 出现「怎么说呢」→ 「别绕，直说」<br>
+- 讲了一个观点但没给原因 → 「为什么？」<br>
+- 用了英文但没翻译 → 「给个中文」
+        </div>
+      </div>
+
+      <!-- 用户自定义：参考风格 -->
+      <div class="section">
+        <div class="section-header">
+          <span class="section-title">我想要的表达风格</span>
+          <span class="section-badge badge-editable">可编辑</span>
+        </div>
+        <p class="section-desc">描述你理想中的说话方式，AI会在反馈时以此为标准。</p>
+        <textarea id="style-ref" placeholder="比如：&#10;- 像跟朋友聊天一样自然，不要播音腔&#10;- 多用第二人称「你」直接对观众说话&#10;- 数字锚定：用具体数字代替「很多/一些」&#10;- 先说结论再展开，不要铺垫太久"></textarea>
+      </div>
+
+      <!-- 用户自定义：额外词库 -->
+      <div class="section">
+        <div class="section-header">
+          <span class="section-title">我的口癖补充</span>
+          <span class="section-badge badge-editable">可编辑</span>
+        </div>
+        <p class="section-desc">你自己特有的口癖/高频词，底层词库没覆盖到的。</p>
+        <textarea id="custom-words" rows="3" placeholder="比如：对吧、你知道吗、怎么说呢、确实、属于是"></textarea>
+      </div>
+
+      <!-- 按钮 -->
+    </div>
+
+    <!-- 右下角悬浮操作栏：不随页面滚动 -->
+    <div class="floating-actions">
+      <button class="btn-save" id="btn-prompt-save">保存规则</button>
+      <button class="btn-reset" id="btn-prompt-reset">恢复默认</button>
+      <div class="save-success" id="prompt-save-success">✓ 已保存，下次训练生效</div>
+    </div>
+  </div>
+
+  <!-- 全局确认/提示对话框（替代原生 confirm/alert） -->
+  <div id="app-confirm-modal" class="modal hidden">
+    <div class="modal-content modal-content-sm">
+      <div class="modal-header">
+        <h2 id="confirm-title">确认操作</h2>
+        <button id="btn-confirm-x" class="btn-close" aria-label="关闭">×</button>
+      </div>
+      <div class="modal-body">
+        <p id="confirm-message" class="confirm-message"></p>
+      </div>
+      <div class="modal-footer">
+        <button id="btn-confirm-cancel" class="btn-sm">取消</button>
+        <button id="btn-confirm-ok" class="btn-sm">确定</button>
+        <button id="btn-confirm-third" class="btn-sm hidden">第三操作</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 加载顺序契约：基础设施（router/confirm/媒体喂入器）先于消费方；secret-field/analyzer 先于 settings 装配壳 -->
+  <script src="markdown.js"></script>
+  <script src="../lib/feedback-scheduler.js"></script>
+  <script src="../lib/feedback-classifier.js"></script>
+  <script src="../lib/lexicon-editor-state.js"></script>
+  <script src="router.js"></script>
+  <script src="confirm-modal.js"></script>
+  <script src="media-file-feeder.js"></script>
+  <script src="settings/secret-field.js"></script>
+  <script src="settings/analyzer.js"></script>
+  <script src="settings.js"></script>
+  <script src="app.js"></script>
+  <script src="lexicon-editor-page.js"></script>
+  <script src="prompt-editor-page.js"></script>
+</body>
+</html>

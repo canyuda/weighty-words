@@ -1,0 +1,74 @@
+{
+  "_comment": "示例文档：~/.weighty-words/settings.json（代码不读取本文件）。凭据明文落盘为显式产品决策。",
+  "version": 2,
+  "analysis": {
+    "activeId": "an-abc123-x9y8",
+    "entries": [
+      {
+        "id": "an-abc123-x9y8",
+        "provider": "deepseek",
+        "name": "DeepSeek",
+        "baseUrl": "https://api.deepseek.com/v1",
+        "apiKey": "your-api-key-here",
+        "protocol": "openai-chat",
+        "models": [
+          "deepseek-chat",
+          "deepseek-reasoner"
+        ],
+        "primaryModel": "deepseek-chat"
+      },
+      {
+        "id": "an-def456-z1w2",
+        "provider": "custom",
+        "name": "自定义中转",
+        "baseUrl": "https://your-relay.example.com/v1",
+        "apiKey": "another-api-key",
+        "protocol": "openai-chat",
+        "models": [
+          "gpt-4o-mini"
+        ],
+        "primaryModel": "gpt-4o-mini"
+      }
+    ]
+  },
+  "llmParams": {
+    "temperature": 0.7,
+    "realtimeMaxTokens": 150,
+    "reportMaxTokens": 8192
+  },
+  "feedback": {
+    "triggerChars": 30
+  },
+  "asr": {
+    "engine": "auto",
+    "modelSource": "huggingface",
+    "dashscope": {
+      "apiKey": "",
+      "model": "paraformer-realtime-v2",
+      "enabled": true
+    },
+    "tencent": {
+      "appId": "",
+      "secretId": "",
+      "secretKey": "",
+      "engineModelType": "16k_zh",
+      "enabled": true
+    },
+    "volcengine": {
+      "appKey": "",
+      "accessKey": "",
+      "resourceId": "volc.bigasr.sauc.duration",
+      "modelName": "bigmodel",
+      "enabled": true
+    },
+    "xfyun": {
+      "appId": "",
+      "apiKey": "",
+      "model": "",
+      "enabled": true
+    },
+    "local": {
+      "enabled": true
+    }
+  }
+}
